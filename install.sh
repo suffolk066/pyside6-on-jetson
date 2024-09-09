@@ -26,7 +26,7 @@ function install_package {
  
 function update_cmake {
     change_directory
-    mkdir cmake-3.29.2/Src
+    mkdir -p cmake-3.29.2/Src
     cd cmake-3.29.2/Src || error_exit "Failed to change directory to ~/cmake-3.29.2/Src"
  
     wget -c --show-progress https://github.com/Kitware/CMake/releases/download/v3.29.2/cmake-3.29.2.tar.gz || error_exit "Failed to download CMake"

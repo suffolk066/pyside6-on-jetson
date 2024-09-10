@@ -19,36 +19,36 @@ function install_package {
                             libjpeg-dev libglib2.0-dev libpulse-dev libasound2-dev libcups2-dev libegl1-mesa-dev libxcb1-dev libx11-xcb-dev \
                             libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-x11-dev '^libxcb.*-dev' libvulkan-dev libnss3-dev libxshmfence-dev \
                             libxkbfile-dev python3-html5lib cmake curl libopenblas-base libopenmpi-dev zlib1g-dev gcc-10 g++-10 patchelf \
-                            python3-pip git-lfs || error_exit "Failed to install packages"
+                            python3-pip git-lfs ninja-build || error_exit "Failed to install packages"
     pip3 install --upgrade pip
     pip3 install --upgrade setuptools==69.3.1 wheel build
 }
  
 function update_cmake {
     change_directory
-    mkdir -p cmake-3.29.2/Src
-    cd cmake-3.29.2/Src || error_exit "Failed to change directory to ~/cmake-3.29.2/Src"
- 
+    if [ -d "cmake-3.29.2" ]; then
+        echo "cmake folder already exist"
+        rm -rf "cmake-3.29.2"
+    fi
+    mkdir -p cmake-3.29.2/Src && cd cmake-3.29.2/Src
     wget -c --show-progress https://github.com/Kitware/CMake/releases/download/v3.29.2/cmake-3.29.2.tar.gz || error_exit "Failed to download CMake"
-    tar xvf cmake-3.29.2.tar.gz || error_exit "Failed to extract CMake"
-    rm cmake-3.29.2.tar.gz || error_exit "Failed to delete CMake tar file"
- 
+    tar xvf cmake-3.29.2.tar.gz
+
     cd ..
-    mkdir -p cmake-3.29.2-build
-    cd cmake-3.29.2-build || error_exit "Failed to change directory to cmake-3.29.2-build"
- 
-    cmake -DCMAKE_BUILD_QtDialog=ON -DQT_QMAKE_EXECUTABLE=/usr/lib/qt5/bin/qmake ../Src/cmake-3.29.2 || error_exit "Failed to configure CMake"
- 
-    make -j $(nproc) || error_exit "Failed to build CMake"
+    mkdir -p cmake-3.29.2-build && cd cmake-3.29.2-build
+    cmake ../Src/cmake-3.29.2 || error_exit "Failed to configure CMake"
+
+    # make
+    make -j $(nproc)
     sudo make install || error_exit "Failed to install CMake"
 
-    echo "export CMAKE_ROOT=/usr/local/share/cmake-3.29" >> ~/.bashrc || error_exit "Failed to set CMAKE_ROOT environment variable"
-    source ~/.bashrc || error_exit "Failed to source ~/.bashrc"
+    echo "export CMAKE_ROOT=/usr/local/share/cmake-3.29" >> ~/.bashrc
+    source ~/.bashrc
 
     # Clean up
     change_directory
-    rm -rf ~/cmake-3.29.2 || error_exit "Failed to delete CMake source directory"
- 
+    rm -rf cmake-3.29.2
+
     echo "cmake update completed successfully."
 }
  
@@ -67,20 +67,23 @@ function install_pyqt6 {
  
     wget https://master.qt.io/archive/qt/6.6/6.6.1/single/qt-everywhere-src-6.6.1.tar.xz || error_exit "Failed to download Qt source"
     tar xf qt-everywhere-src-6.6.1.tar.xz || error_exit "Failed to extract Qt source"
-    rm qt-everywhere-src-6.6.1.tar.xz || error_exit "Failed to delete Qt source tar file"
- 
-    mkdir build-release
-    cd build-release
- 
-    cmake -Wno-dev -GNinja -DQT_BUILD_TESTS=ON -DFEATURE_xcb=ON -DFEATURE_xkbcommon_x11=ON -DBUILD_qtwebengine=ON -DLLVM_DIR=/usr/lib/llvm-15/lib/ -DClang_DIR=/usr/lib/cmake/clang-15 -DCMAKE_INSTALL_PREFIX=$Qt6_DIR ../qt-everywhere-src-6.6.1
+    cd qt-everywhere-src-6.6.1
+    if [ -d "build-release" ]; then
+        rm -r "build-release"
+    fi
+    mkdir build-release && cd build-release
+    
+    ../configure -opensource -confirm-license -platform linux-g++ -prefix /usr/local/Qt-6.6.1 -make tools -make tests -xcb -- -Wno-dev
     build_cores=`expr $(nproc) - 1`
     cmake --build . -j$build_cores
     sudo cmake --install .
+    
     export PATH=$Qt6_DIR/bin:$PATH
     export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
  
     # Clean up
     change_directory
+    rm qt-everywhere-src-6.6.1.tar.xz || error_exit "Failed to delete Qt source tar file"
     rm -rf qt-everywhere-src-6.6.1 || error_exit "Failed to delete Qt source directory"
  
     # If ok so far, add environment to your user's .bashrc (to be done only once)

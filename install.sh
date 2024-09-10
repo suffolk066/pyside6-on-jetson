@@ -1,25 +1,20 @@
 #!/bin/bash
 set -e
- 
-function error_exit {
-    echo "Error: $1"
-    exit 1
-}
- 
+
 function change_directory {
     DOWNLOAD_DIR="/home/$USER/Downloads"
-    cd "$DOWNLOAD_DIR" || error_exit "Failed to change directory to /home/$USER/Downloads"
+    cd "$DOWNLOAD_DIR"
     echo "Change directory to: $DOWNLOAD_DIR"
 }
  
 function install_package {
-    sudo apt-get update || error_exit "Failed to update package list"
+    sudo apt-get update
     sudo apt-get install -y clang-15 clang-tools-15 libclang-15-dev llvm-15-dev llvm-15-tools build-essential libfontconfig1-dev \
                             libdbus-1-dev libfreetype6-dev libicu-dev libinput-dev libxkbcommon-dev libsqlite3-dev libssl-dev libpng-dev \
                             libjpeg-dev libglib2.0-dev libpulse-dev libasound2-dev libcups2-dev libegl1-mesa-dev libxcb1-dev libx11-xcb-dev \
                             libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-x11-dev '^libxcb.*-dev' libvulkan-dev libnss3-dev libxshmfence-dev \
                             libxkbfile-dev python3-html5lib cmake curl libopenblas-base libopenmpi-dev zlib1g-dev gcc-10 g++-10 patchelf \
-                            python3-pip git-lfs ninja-build || error_exit "Failed to install packages"
+                            python3-pip git-lfs ninja-build
     pip3 install --upgrade pip
     pip3 install --upgrade setuptools==69.3.1 wheel build
 }
@@ -31,23 +26,19 @@ function update_cmake {
         rm -rf "cmake-3.29.2"
     fi
     mkdir -p cmake-3.29.2/Src && cd cmake-3.29.2/Src
-    wget -c --show-progress https://github.com/Kitware/CMake/releases/download/v3.29.2/cmake-3.29.2.tar.gz || error_exit "Failed to download CMake"
+    wget -c --show-progress https://github.com/Kitware/CMake/releases/download/v3.29.2/cmake-3.29.2.tar.gz
     tar xvf cmake-3.29.2.tar.gz
 
     cd ..
     mkdir -p cmake-3.29.2-build && cd cmake-3.29.2-build
-    cmake ../Src/cmake-3.29.2 || error_exit "Failed to configure CMake"
+    cmake ../Src/cmake-3.29.2
 
     # make
     make -j $(nproc)
-    sudo make install || error_exit "Failed to install CMake"
+    sudo make install
 
     echo "export CMAKE_ROOT=/usr/local/share/cmake-3.29" >> ~/.bashrc
     source ~/.bashrc
-
-    # Clean up
-    change_directory
-    rm -rf cmake-3.29.2
 
     echo "cmake update completed successfully."
 }
@@ -55,18 +46,18 @@ function update_cmake {
 function install_pyqt6 {
     change_directory
  
-    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100 || error_exit "Failed to set gcc-10 as default gcc"
-    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100 || error_exit "Failed to set g++-10 as default g++"
-    gcc --version || error_exit "Failed to verify gcc installation"
-    g++ --version || error_exit "Failed to verify g++ installation"
+    sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
+    sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
+    gcc --version
+    g++ --version
  
     export LLVM_INSTALL_DIR=/usr/lib/llvm-15
     export CMAKE_PREFIX_PATH=/usr/lib/llvm-15
     export Clang_DIR=/usr/lib/llvm-15/lib/cmake/clang
     export Qt6_DIR=/usr/local/Qt-6.6.1
  
-    wget https://master.qt.io/archive/qt/6.6/6.6.1/single/qt-everywhere-src-6.6.1.tar.xz || error_exit "Failed to download Qt source"
-    tar xf qt-everywhere-src-6.6.1.tar.xz || error_exit "Failed to extract Qt source"
+    wget https://master.qt.io/archive/qt/6.6/6.6.1/single/qt-everywhere-src-6.6.1.tar.xz
+    tar xf qt-everywhere-src-6.6.1.tar.xz
     cd qt-everywhere-src-6.6.1
     if [ -d "build-release" ]; then
         rm -r "build-release"
@@ -80,13 +71,7 @@ function install_pyqt6 {
     
     export PATH=$Qt6_DIR/bin:$PATH
     export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
- 
-    # Clean up
-    change_directory
-    rm qt-everywhere-src-6.6.1.tar.xz || error_exit "Failed to delete Qt source tar file"
-    rm -rf qt-everywhere-src-6.6.1 || error_exit "Failed to delete Qt source directory"
- 
-    # If ok so far, add environment to your user's .bashrc (to be done only once)
+
     echo export PATH=$Qt6_DIR/bin:$PATH >> ~/.bashrc
     echo export PATH=$Qt6_DIR/tools/bin:$PATH >> ./bashrc
     echo export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH >> ~/.bashrc
@@ -97,15 +82,15 @@ function install_pyqt6 {
 }
  
 function install_pyside6 {
-    git clone --recursive -b 6.6.1 https://code.qt.io/pyside/pyside-setup.git || error_exit "Failed to clone PySide6 repository"
-    cd pyside-setup/ || error_exit "Failed to change directory to pyside-setup"
-    python3 setup.py bdist_wheel --parallel=6 --ignore-git --standalone --limited-api=yes --skip-modules=WebEngineCore,WebEngineWidgets --qtpaths=$Qt6_DIR/bin/qtpaths6 --reuse-build || error_exit "Failed to build PySide6 wheels"
-    cd dist/ || error_exit "Failed to change directory to dist"
-    pip3 install shiboken6_generator-6.6.1-6.6.1-cp37-abi3-linux_aarch64.whl shiboken6-6.6.1-6.6.1-cp37-abi3-linux_aarch64.whl PySide6-6.6.1-6.6.1-cp37-abi3-linux_aarch64.whl || error_exit "Failed to install PySide6 wheels"
+    git clone --recursive -b 6.6.1 https://code.qt.io/pyside/pyside-setup.git
+    cd pyside-setup/
+    python3 setup.py bdist_wheel --parallel=6 --ignore-git --standalone --limited-api=yes --skip-modules=WebEngineCore,WebEngineWidgets --qtpaths=$Qt6_DIR/bin/qtpaths6 --reuse-build
+    cd dist/
+    pip3 install shiboken6_generator-6.6.1-6.6.1-cp37-abi3-linux_aarch64.whl shiboken6-6.6.1-6.6.1-cp37-abi3-linux_aarch64.whl PySide6-6.6.1-6.6.1-cp37-abi3-linux_aarch64.whl
  
     # Clean up
     change_directory
-    rm -rf pyside-setup || error_exit "Failed to delete PySide6 source directory"
+    rm -rf pyside-setup
  
     echo "pyside6 installation completed successfully."
 }

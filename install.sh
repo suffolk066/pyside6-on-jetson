@@ -68,7 +68,7 @@ function install_pyqt6 {
     fi
     mkdir build-release && cd build-release
     
-    ../configure -opensource -confirm-license -platform linux-g++ -prefix /usr/local/Qt-6.6.1 -make tools -make tests -xcb -- -Wno-dev
+    ../configure -opensource -confirm-license -platform linux-g++ -prefix $Qt6_DIR -make tools -make tests -xcb -- -Wno-dev
     build_cores=`expr $(nproc) - 1`
     cmake --build . -j$build_cores
     sudo cmake --install .

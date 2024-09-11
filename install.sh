@@ -1,5 +1,6 @@
 #!/bin/bash
 set -e
+export Qt6_DIR=/usr/local/Qt-6.6.1
 
 function change_directory {
     DOWNLOAD_DIR="/home/$USER/Downloads"
@@ -15,8 +16,11 @@ function install_package {
                             libglu1-mesa-dev libxrender-dev libxi-dev libxkbcommon-x11-dev '^libxcb.*-dev' libvulkan-dev libnss3-dev libxshmfence-dev \
                             libxkbfile-dev python3-html5lib cmake curl libopenblas-base libopenmpi-dev zlib1g-dev gcc-10 g++-10 patchelf \
                             python3-pip git-lfs ninja-build
+                            
+    # Qt6 + PySide6 requirements
     pip3 install --upgrade pip
-    pip3 install --upgrade setuptools==69.3.1 wheel build
+    pip3 install --upgrade setuptools==69.3.1 wheel==0.35 build
+    pip3 install patchelf pkginfo jinja2 buildozer gitpython
 }
  
 function update_cmake {
@@ -69,13 +73,11 @@ function install_pyqt6 {
     cmake --build . -j$build_cores
     sudo cmake --install .
     
-    export PATH=$Qt6_DIR/bin:$PATH
-    export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH
-
+    echo export Qt6_DIR=/usr/local/Qt-6.6.1 >> ~/.bashrc
     echo export PATH=$Qt6_DIR/bin:$PATH >> ~/.bashrc
-    echo export PATH=$Qt6_DIR/tools/bin:$PATH >> ./bashrc
+    echo export PATH=$Qt6_DIR/tools/bin:$PATH >> ~/.bashrc
     echo export LD_LIBRARY_PATH=$Qt6_DIR/lib:$LD_LIBRARY_PATH >> ~/.bashrc
-    echo export LD_LIBRARY_PATH=$Qt6_DIR/tools/lib:$LD_LIBRARY_PATH >> ./bashrc
+    echo export LD_LIBRARY_PATH=$Qt6_DIR/tools/lib:$LD_LIBRARY_PATH >> ~/.bashrc
     source ~/.bashrc
  
     echo "pyqt6 installation completed successfully."
